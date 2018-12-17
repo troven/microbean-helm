@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 
 import com.github.zafarkhaja.semver.Version;
 
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
@@ -49,25 +50,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 
 import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Resource;
-
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HTTPGetAction;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PodList;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.Probe;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretVolumeSource;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.ServiceSpec;
-import io.fabric8.kubernetes.api.model.Status;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 
 //import io.fabric8.kubernetes.api.model.extensions.Deployment;
 //import io.fabric8.kubernetes.api.model.extensions.DeploymentSpec;
@@ -176,11 +158,6 @@ public class TillerInstaller {
    *
    * @param kubernetesClient the {@link KubernetesClient} to use to
    * communicate with Kubernetes; must not be {@code null}
-   *
-   * @param tillerNamespace the namespace into which to install
-   * Tiller; may be {@code null} in which case the value of the {@link
-   * TILLER_NAMESPACE} environment variable will be used&mdash;if that
-   * is {@code null} then {@code kube-system} will be used instead
    *
    * @exception NullPointerException if {@code kubernetesClient} is
    * {@code null}
@@ -821,6 +798,10 @@ public class TillerInstaller {
                                                 final boolean verifyTls) {    
 
     final DeploymentSpec deploymentSpec = new DeploymentSpec();
+    LabelSelector labelSelector = new LabelSelector();
+    labelSelector.setMatchLabels(normalizeLabels(labels));
+    deploymentSpec.setSelector(labelSelector);
+
     final PodTemplateSpec podTemplateSpec = new PodTemplateSpec();
     final ObjectMeta metadata = new ObjectMeta();
     metadata.setLabels(normalizeLabels(labels));
@@ -841,7 +822,7 @@ public class TillerInstaller {
       podSpec.setVolumes(Arrays.asList(volume));
     }
     podTemplateSpec.setSpec(podSpec);
-    deploymentSpec.setTemplate(podTemplateSpec);    
+    deploymentSpec.setTemplate(podTemplateSpec);
     return deploymentSpec;
   }
 
@@ -994,7 +975,7 @@ public class TillerInstaller {
    * @exception TillerPollingDeadlineExceededException if Tiller could
    * not be contacted in time
    *
-   * @exception TillerUnavailableException if Tiller was not healthy
+   * @exception MalformedURLException if URL is not well formed
    */
   protected final <T extends HttpClientAware & KubernetesClient> void ping(String namespace, Map<String, String> labels, final long timeoutInMilliseconds) throws MalformedURLException {
     if (timeoutInMilliseconds >= 0L && this.kubernetesClient instanceof HttpClientAware) {
