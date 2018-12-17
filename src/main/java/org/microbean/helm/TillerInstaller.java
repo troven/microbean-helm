@@ -38,6 +38,10 @@ import java.util.regex.Pattern;
 
 import com.github.zafarkhaja.semver.Version;
 
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.HttpClientAware;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -65,9 +69,9 @@ import io.fabric8.kubernetes.api.model.Status;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 
-import io.fabric8.kubernetes.api.model.extensions.Deployment;
-import io.fabric8.kubernetes.api.model.extensions.DeploymentSpec;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
+//import io.fabric8.kubernetes.api.model.extensions.Deployment;
+//import io.fabric8.kubernetes.api.model.extensions.DeploymentSpec;
+//import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
 
 import io.grpc.health.v1.HealthCheckRequest;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
@@ -577,8 +581,8 @@ public class TillerInstaller {
                             hostNetwork,
                             tls,
                             verifyTls);
-        
-    this.kubernetesClient.extensions().deployments().inNamespace(namespace).create(deployment);
+
+    this.kubernetesClient.apps().deployments().inNamespace(namespace).create(deployment);
 
     final Service service = this.createService(namespace, normalizeServiceName(serviceName), labels);
     this.kubernetesClient.services().inNamespace(namespace).create(service);
@@ -641,21 +645,22 @@ public class TillerInstaller {
         throw new IllegalStateException(serverTillerImage + " is newer than " + VERSION + "; use force=true to force downgrade");
       }
     }
-    
-    resource.edit()
-      .editSpec()
-      .editTemplate()
-      .editSpec()
-      .editContainer(0)
-      .withImage(normalizeImageName(imageName))
-      .withImagePullPolicy(normalizeImagePullPolicy(imagePullPolicy))
-      .and()
-      .withServiceAccountName(normalizeServiceAccountName(serviceAccountName))
-      .endSpec()
-      .endTemplate()
-      .endSpec()
-      .done();
 
+    DoneableDeployment edit = resource.edit();
+
+//      .editSpec()
+//      .editTemplate()
+//      .editSpec()
+//      .editContainer(0)
+//      .withImage(normalizeImageName(imageName))
+//      .withImagePullPolicy(normalizeImagePullPolicy(imagePullPolicy))
+//      .and()
+//      .withServiceAccountName(normalizeServiceAccountName(serviceAccountName))
+//      .endSpec()
+//      .endTemplate()
+//      .endSpec()
+//      .done();
+//
     // TODO: this way of emulating install.go's check to see if the
     // Service exists...not sure it's right
     final Service service = this.kubernetesClient.services()
